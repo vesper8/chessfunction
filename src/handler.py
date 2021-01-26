@@ -17,6 +17,7 @@ sys.path.insert(0, 'src/lib')
 import annotator
 from emailer import create_email_message
 
+EVAL_TIME = os.environ["EVAL_TIME"]
 SENDER = os.environ["SENDER"]
 RECIPIENT = os.environ["RECIPIENT"]
 REGION = os.environ["REGION"]
@@ -38,7 +39,7 @@ PARAM_CLIENT = boto3.client('ssm')
 
 
 def annotate_game(event, context):
-    evaltime = get_parameter('/chessfunction/evaltime')
+    evaltime = EVAL_TIME
     print("evaltime:", evaltime)
     return annotator.one_game(event, evaltime)
 
