@@ -9,18 +9,25 @@ import concurrent.futures
 import boto3
 from botocore.exceptions import ClientError
 from botocore.config import Config
-# vendored libs
+
+# function supplied libs
 sys.path.insert(0, 'src/vendor')
 import chess
 import chess.pgn
+import requests
+
 sys.path.insert(0, 'src/lib')
 import annotator
 from emailer import create_email_message
 
+# environment variables
 SENDER = os.environ["SENDER"]
 RECIPIENT = os.environ["RECIPIENT"]
 REGION = os.environ["REGION"]
 ANNOTATE_GAME = os.environ["ANNOTATE_GAME"]
+POST_API = os.environ["POST_API"]
+DELIVERY_METHOD = os.environ["DELIVERY_METHOD"]
+
 # global client, because making new clients is apparently not threadsafe.
 LAMBDA_CLIENT = boto3.client(
     'lambda',
@@ -71,9 +78,16 @@ async def main(event):
     ]
     string_results = await asyncio.gather(*game_results)
     analyzed_games = "".join(string_results)
-    send_email(analyzed_games)
+
+    if DELIVERY_METHOD == 'api':
+        ping_api(analyzed_games)    
+    elif DELIVERY_METHOD == 'email':
+        send_email(analyzed_games)
+
     return analyzed_games
 
+def ping_api(analyzed_games):
+    requests.post(POST_API, data={'annotated': analyzed_games})
 
 def send_email(analyzed_games):
     SUBJECT = "chess analyzer"
